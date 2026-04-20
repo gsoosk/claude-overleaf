@@ -30,8 +30,18 @@ Claude edits `.tex` files in a repo that is synced to Overleaf. The user describ
 ## Session start — always do this first
 
 ```bash
+# 1. Pull GitHub changes
 git pull
+
+# 2. Also fetch and merge any direct Overleaf edits (prevents push conflicts)
+git fetch overleaf
+git merge overleaf/master --no-edit --allow-unrelated-histories 2>/dev/null || true
+
+# 3. Push the merged state back so GitHub and Overleaf are in sync before editing
+git push
 ```
+
+This three-step pull **prevents the most common conflict**: Overleaf has changes Claude hasn't seen, so the GitHub Action can't push back. By merging Overleaf changes locally first, the subsequent push is always a fast-forward.
 
 Check that the `overleaf` remote exists:
 
