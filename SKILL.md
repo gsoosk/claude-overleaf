@@ -33,15 +33,29 @@ Claude edits `.tex` files in a repo that is synced to Overleaf. The user describ
 # 1. Pull GitHub changes
 git pull
 
-# 2. Also fetch and merge any direct Overleaf edits (prevents push conflicts)
+# 2. Fetch Overleaf changes directly
 git fetch overleaf
-git merge overleaf/master --no-edit --allow-unrelated-histories 2>/dev/null || true
+```
 
-# 3. Push the merged state back so GitHub and Overleaf are in sync before editing
+Then attempt to merge:
+
+```bash
+git merge overleaf/master --no-edit --allow-unrelated-histories
+```
+
+**If merge succeeds** — push the merged state back and proceed to editing:
+
+```bash
 git push
 ```
 
-This three-step pull **prevents the most common conflict**: Overleaf has changes Claude hasn't seen, so the GitHub Action can't push back. By merging Overleaf changes locally first, the subsequent push is always a fast-forward.
+**If merge reports conflicts** — do NOT auto-resolve silently. Instead:
+1. Run `git diff --diff-filter=U` to show conflicting sections
+2. Present the conflicting lines to the user and ask which version to keep
+3. Apply the chosen resolution, stage, commit, and push
+4. Then proceed to editing
+
+This ensures the user always has control over what content survives a conflict.
 
 Check that the `overleaf` remote exists:
 
