@@ -1,60 +1,66 @@
 # claude-overleaf
 
-A Claude skill that lets Claude act as a co-author for papers living on Overleaf. The user describes what they want written; Claude edits the `.tex` files and handles all git sync automatically.
+A Claude skill that lets Claude act as a co-author for papers living on Overleaf. Tell Claude what you want written; it edits the `.tex` files and pushes changes to Overleaf automatically.
 
-## What it does
+## Quickstart
 
-- Claude pulls before every edit session and pushes after every change
-- Changes appear in Overleaf within ~30 seconds of a push
-- First-time setup installs a GitHub Actions workflow for bidirectional sync
-- Overleaf → GitHub syncs every hour automatically
-
-Based on [feamster/overleaf-sync](https://github.com/feamster/overleaf-sync).
-
-## Install the skill
+Install once, then just use `/overleaf-sync` in any Claude session:
 
 ```bash
 bash install.sh
 ```
 
-Symlinks `SKILL.md` and supporting files into `~/.claude/skills/overleaf-sync/`.
+That's it. You don't need to run any setup manually — Claude will handle everything.
 
-## First-time setup for a repo
+## How it works
 
-```bash
-python3 scripts/setup.py /path/to/repo \
-  --overleaf-id YOUR_PROJECT_ID \
-  --commit
-```
+When you type `/overleaf-sync` in a Claude session, Claude will:
 
-Then add two GitHub secrets at `https://github.com/OWNER/REPO/settings/secrets/actions`:
+1. **Check if the repo is already connected to Overleaf**
+2. **If not, run first-time setup automatically** — Claude will ask you for:
+   - Your **Overleaf Project ID** (from the URL: `https://www.overleaf.com/project/[PROJECT_ID]`)
+   - Your **Overleaf Git Token** (Overleaf → Account Settings → Git Integration)
+   - Then it installs the GitHub Actions workflow, adds the `overleaf` remote, and guides you to add two GitHub secrets
+3. **Sync state** — fetch any changes made directly in Overleaf before starting
+4. **Ask what you want written or edited**
 
-| Secret | Value |
+From that point on, every edit Claude makes is automatically committed and pushed to Overleaf. You only need to **refresh the Overleaf browser tab** to see the result.
+
+## What Claude handles automatically
+
+| Claude does this | Without you asking |
 |---|---|
-| `OVERLEAF_PROJECT_ID` | from `https://www.overleaf.com/project/[ID]` |
-| `OVERLEAF_GIT_TOKEN` | from Overleaf → Account Settings → Git Integration |
+| `git pull` + fetch from Overleaf | Before every edit session |
+| Read existing `.tex` files | To understand structure and style |
+| Write or edit content | As instructed |
+| `git add` + `git commit` + `git push` | After every edit |
 
-## How Claude uses this skill
+## Conflict handling
 
-When the user asks Claude to write or edit their Overleaf paper, Claude:
-
-1. `git pull` — picks up any changes from Overleaf collaborators
-2. Reads relevant `.tex` files
-3. Makes the requested edits
-4. `git add` + `git commit` + `git push` — syncs to Overleaf automatically
-
-The user only needs to refresh the Overleaf browser tab to see the result.
+If someone edits in Overleaf and Claude pushes at the same time:
+- **On push**: Claude's edits win (`-X ours`)
+- **On hourly pull**: Overleaf edits win (`-X theirs`)
+- Conflicts never block the workflow — always auto-resolved
 
 ## Repository layout
 
 ```
 claude-overleaf/
-├── SKILL.md                    ← Claude skill definition
-├── install.sh                  ← Installs skill to ~/.claude/skills/
+├── SKILL.md                    ← Claude skill definition (auto-triggered)
+├── commands/
+│   └── overleaf-sync.md        ← /overleaf-sync slash command
+├── install.sh                  ← Installs skill + command to ~/.claude/
 ├── scripts/
-│   └── setup.py               ← One-time repo setup
+│   └── setup.py               ← First-time repo setup (Claude runs this)
 ├── templates/
 │   └── overleaf-sync.yml      ← GitHub Actions workflow template
 └── references/
-    └── troubleshooting.md     ← Common failure modes and fixes
+    └── troubleshooting.md     ← Failure modes and fixes
 ```
+
+## Security
+
+- Never share your Overleaf Git token in plain text
+- If a token is exposed, regenerate it immediately: Overleaf → Account Settings → Git Integration → regenerate, then update the `OVERLEAF_GIT_TOKEN` GitHub secret
+
+Based on [feamster/overleaf-sync](https://github.com/feamster/overleaf-sync).
