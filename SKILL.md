@@ -120,7 +120,8 @@ git push origin main
 | `git push` to GitHub | GitHub Action pushes commits to Overleaf within ~30 seconds |
 | Hourly schedule | GitHub Action pulls Overleaf edits back to GitHub |
 | Manual trigger | GitHub → Actions tab → "Sync with Overleaf" → Run workflow |
-| Conflict | Action creates `overleaf-sync-conflict-*` branch for manual resolution |
+| Conflict on push | Auto-resolved with `-X ours` — GitHub (Claude) edits win |
+| Conflict on hourly pull | Auto-resolved with `-X theirs` — Overleaf edits win |
 
 ---
 
